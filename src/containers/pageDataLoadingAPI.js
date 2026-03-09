@@ -19,6 +19,7 @@ import { loadData as RequestQuotePageLoader } from './RequestQuotePage/RequestQu
 import { loadData as SearchPageLoader } from './SearchPage/SearchPage.duck';
 import { loadData as StripePayoutPageLoader } from './StripePayoutPage/StripePayoutPage.duck';
 import { loadData as TermsOfServicePageLoader } from './TermsOfServicePage/TermsOfServicePage.duck';
+import { loadData as PriceTrackerPageLoader } from './PriceTrackerPage/PriceTrackerPage.duck';
 import {
   loadData as TransactionPageLoader,
   setInitialValues as TransactionPageInitialValues,
@@ -83,6 +84,9 @@ const getPageDataLoadingAPI = () => {
     TransactionPage: {
       loadData: TransactionPageLoader,
       setInitialValues: TransactionPageInitialValues,
+    },
+    PriceTrackerPage: {
+      loadData: PriceTrackerPageLoader,
     },
   };
 };
