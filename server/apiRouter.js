@@ -19,6 +19,7 @@ const deleteAccount = require('./api/delete-account');
 const priceTracker = require('./api/price-tracker');
 
 const createUserWithIdp = require('./api/auth/createUserWithIdp');
+const priceTracker = require('./api/price-tracker');
 
 const { authenticateFacebook, authenticateFacebookCallback } = require('./api/auth/facebook');
 const { authenticateGoogle, authenticateGoogleCallback } = require('./api/auth/google');
@@ -55,6 +56,7 @@ router.get('/initiate-login-as', initiateLoginAs);
 router.get('/login-as', loginAs);
 router.get('/price-tracker', priceTracker);
 router.post('/transaction-line-items', transactionLineItems);
+router.get('/price-tracker', priceTracker);
 router.post('/initiate-privileged', initiatePrivileged);
 router.post('/transition-privileged', transitionPrivileged);
 router.post('/delete-account', deleteAccount);
