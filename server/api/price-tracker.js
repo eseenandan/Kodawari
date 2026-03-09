@@ -3,14 +3,7 @@
  * 
  * This endpoint fetches historical transaction data (sold items) from Sharetribe
  * and returns price information for items matching the given filters.
- * 
- * Query Parameters:
- * - keyword: (string, optional) Search by item title or description
- * - category: (string, optional) Filter by category
- * - page: (number, optional) Page number for pagination (default: 1)
- * - perPage: (number, optional) Items per page (default: 20)
- * - sortBy: (string, optional) Sort by 'price' or 'date' (default: 'date')
- * - sortOrder: (string, optional) 'asc' or 'desc' (default: 'desc')
+ * Now includes trend data for the last month.
  */
 
 const { getTrustedSdk, handleError } = require('../api-util/sdk');
@@ -19,29 +12,45 @@ module.exports = (req, res) => {
   const { keyword = '', category = '', page = 1, perPage = 20, sortBy = 'date', sortOrder = 'desc' } = req.query;
 
   getTrustedSdk(req)
-    .then(sdk => {
-      // Build query parameters for the Integration API
+    .then(async sdk => {
+      // 1. Fetch transactions for the list
       const queryParams = {
         states: ['state/completed', 'state/delivered'],
         perPage: Math.min(parseInt(perPage, 10) || 20, 100), // Cap at 100 items per page
         page: Math.max(parseInt(page, 10) || 1, 1),
+        include: ['listing'],
+        'fields.transaction': ['lastTransitionedAt', 'lineItems'],
+        'fields.listing': ['title', 'publicData'],
       };
 
-      // Query transactions using the Integration API
-      return sdk.transactions.query(queryParams);
-    })
-    .then(response => {
-      const transactions = response.data.data || [];
-      const meta = response.data.meta || {};
+      // 2. Fetch trend data for the last month
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+      const trendQueryParams = {
+        states: ['state/completed', 'state/delivered'],
+        last_transitioned_at_start: oneMonthAgo.toISOString(),
+        per_page: 100, // Get up to 100 recent sales for the trend
+      };
+
+      const [listResponse, trendResponse] = await Promise.all([
+        sdk.transactions.query(queryParams),
+        sdk.transactions.query(trendQueryParams)
+      ]);
+
+      const transactions = listResponse.data.data || [];
+      const listings = listResponse.data.included || [];
+      const meta = listResponse.data.meta || {};
 
       // Process transactions to extract price information
       const priceData = transactions
         .map(transaction => {
-          const listing = transaction.relationships?.listing?.data;
+          const listingRef = transaction.relationships?.listing?.data;
+          const listing = listings.find(l => l.id.uuid === listingRef?.id.uuid);
           const lineItems = transaction.attributes?.lineItems || [];
           
           // Find the main line item (usually the first one that's not a commission)
-          const mainLineItem = lineItems.find(item => !item.code.includes('commission'));
+          const mainLineItem = lineItems.find(item => !item.code.includes('commission')) || lineItems[0];
           
           if (!mainLineItem || !listing) {
             return null;
@@ -94,12 +103,34 @@ module.exports = (req, res) => {
         return sortOrder === 'desc' ? -comparison : comparison;
       });
 
+      // Process trend data: group by date and calculate average price
+      const trendTransactions = trendResponse.data.data || [];
+      const trendMap = {};
+      trendTransactions.forEach(tx => {
+        const dateStr = new Date(tx.attributes.lastTransitionedAt).toISOString().split('T')[0];
+        const lineItems = tx.attributes.lineItems || [];
+        const mainLineItem = lineItems.find(item => !item.code.includes('commission')) || lineItems[0];
+        const price = mainLineItem ? mainLineItem.lineTotal.amount / 100 : 0;
+
+        if (!trendMap[dateStr]) {
+          trendMap[dateStr] = { total: 0, count: 0 };
+        }
+        trendMap[dateStr].total += price;
+        trendMap[dateStr].count += 1;
+      });
+
+      const trends = Object.keys(trendMap).map(date => ({
+        date,
+        price: Math.round((trendMap[date].total / trendMap[date].count) * 100) / 100,
+      })).sort((a, b) => new Date(a.date) - new Date(b.date));
+
       // Return the processed data with metadata
       res
         .status(200)
         .set('Content-Type', 'application/json')
         .json({
           data: filteredData,
+          trends: trends,
           meta: {
             totalItems: filteredData.length,
             page: parseInt(page, 10) || 1,

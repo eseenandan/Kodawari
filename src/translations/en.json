@@ -1442,6 +1442,7 @@
   "PriceTrackerPage.resultsTitle": "{count} items found",
   "PriceTrackerPage.resultsMeta": "Page {page} of {totalPages}",
   "PriceTrackerPage.soldOn": "Sold on",
-  "PriceTrackerPage.paginationInfo": "Page {page} of {totalPages}"
-
+  "PriceTrackerPage.paginationInfo": "Page {page} of {totalPages}",
+  "PriceTrackerPage.trendTitle": "Price Trends (Last 30 Days)",
+  "PriceTrackerPage.avgPrice": "Average Price"
 }

@@ -42,7 +42,5 @@ export {
   SearchPage,
   StripePayoutPage,
   TransactionPage,
-  PriceTrackerPage,   // <-- add this line
-
-
+  PriceTrackerPage,
 };

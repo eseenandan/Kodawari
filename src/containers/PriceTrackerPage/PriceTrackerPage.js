@@ -2,19 +2,28 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useIntl, FormattedMessage, FormattedDate } from 'react-intl';
 import { Helmet } from 'react-helmet-async';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
 
 import {
   fetchPriceTrackerData,
   setFilters,
   selectPriceTrackerData,
+  selectPriceTrackerTrends,
   selectPriceTrackerMeta,
   selectPriceTrackerIsLoading,
   selectPriceTrackerError,
   selectPriceTrackerFilters,
 } from './PriceTrackerPage.duck';
-
-// useConfiguration doesnt exist and needs to be revised 
-import { useConfiguration } from '../../util/configHelpers';
+import { useConfiguration } from '../../context/configurationContext';
 import { formatMoney } from '../../util/currency';
 
 import css from './PriceTrackerPage.module.css';
@@ -22,16 +31,16 @@ import css from './PriceTrackerPage.module.css';
 /**
  * PriceTrackerPage component
  * 
- * Displays a list of sold items with their prices, allowing users to filter
- * by keyword and category. This page helps users understand the pricing trends
- * in the marketplace.
+ * Displays a list of sold items with their prices and a trend graph,
+ * allowing users to filter by keyword and category.
  */
 const PriceTrackerPage = () => {
   const intl = useIntl();
   const dispatch = useDispatch();
-  const config = useConfiguration(); 
+  const config = useConfiguration();
 
   const data = useSelector(selectPriceTrackerData);
+  const trends = useSelector(selectPriceTrackerTrends);
   const meta = useSelector(selectPriceTrackerMeta);
   const isLoading = useSelector(selectPriceTrackerIsLoading);
   const error = useSelector(selectPriceTrackerError);
@@ -40,7 +49,7 @@ const PriceTrackerPage = () => {
   const [localFilters, setLocalFilters] = useState(filters);
 
   // Get categories from config
-  const categories = config?.categoryConfiguration?.categories || [];
+  const categories = config?.listing?.categories || [];
   const allCategories = [];
 
   const flattenCategories = (cats) => {
@@ -68,14 +77,15 @@ const PriceTrackerPage = () => {
   };
 
   const handleReset = () => {
-    setLocalFilters({
+    const resetFilters = {
       keyword: '',
       category: '',
       sortBy: 'date',
       sortOrder: 'desc',
       page: 1,
       perPage: 20,
-    });
+    };
+    setLocalFilters(resetFilters);
   };
 
   const handlePageChange = (newPage) => {
@@ -88,6 +98,13 @@ const PriceTrackerPage = () => {
 
   const pageTitle = intl.formatMessage({ id: 'PriceTrackerPage.title' });
   const pageDescription = intl.formatMessage({ id: 'PriceTrackerPage.description' });
+
+  // Format trend data for the chart
+  const chartData = trends.map(t => ({
+    name: intl.formatDate(new Date(t.date), { month: 'short', day: 'numeric' }),
+    price: t.price,
+    fullDate: t.date,
+  }));
 
   return (
     <div className={css.root}>
@@ -106,6 +123,45 @@ const PriceTrackerPage = () => {
             <FormattedMessage id="PriceTrackerPage.description" />
           </p>
         </div>
+
+        {/* Trend Chart Section */}
+        {trends.length > 0 && (
+          <div className={css.chartSection}>
+            <h2 className={css.sectionTitle}>
+              <FormattedMessage id="PriceTrackerPage.trendTitle" />
+            </h2>
+            <div className={css.chartContainer}>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fontSize: 12 }} 
+                    minTickGap={30}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(value) => `$${value}`}
+                  />
+                  <Tooltip 
+                    formatter={(value) => [`$${value}`, intl.formatMessage({ id: 'PriceTrackerPage.avgPrice' })]}
+                    labelFormatter={(label) => label}
+                  />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="price" 
+                    name={intl.formatMessage({ id: 'PriceTrackerPage.avgPrice' })}
+                    stroke="#4A90E2" 
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <div className={css.filtersSection}>

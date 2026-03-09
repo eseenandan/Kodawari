@@ -24,6 +24,7 @@ import {
   loadData as TransactionPageLoader,
   setInitialValues as TransactionPageInitialValues,
 } from './TransactionPage/TransactionPage.duck';
+import { loadData as PriceTrackerPageLoader } from './PriceTrackerPage/PriceTrackerPage.duck';
 
 const getPageDataLoadingAPI = () => {
   return {

@@ -1,6 +1,8 @@
 {
   "PriceTrackerPage.title": "Price Tracker",
   "PriceTrackerPage.description": "Browse historical prices of items sold on our marketplace. Use filters to find prices for specific items and categories.",
+  "PriceTrackerPage.trendTitle": "Price Trends (Last 30 Days)",
+  "PriceTrackerPage.avgPrice": "Average Price",
   "PriceTrackerPage.filterKeyword": "Search by keyword",
   "PriceTrackerPage.keywordPlaceholder": "Enter item name or description...",
   "PriceTrackerPage.filterCategory": "Category",

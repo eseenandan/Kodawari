@@ -3,6 +3,7 @@ import { storableError } from '../../util/errors';
 
 const initialState = {
   data: [],
+  trends: [],
   meta: {},
   isLoading: false,
   error: null,
@@ -30,6 +31,7 @@ const priceTrackerSlice = createSlice({
     fetchPriceTrackerSuccess: (state, action) => {
       state.isLoading = false;
       state.data = action.payload.data;
+      state.trends = action.payload.trends;
       state.meta = action.payload.meta;
     },
     fetchPriceTrackerError: (state, action) => {
@@ -49,7 +51,7 @@ export const {
 export default priceTrackerSlice.reducer;
 
 // Thunk to fetch price tracker data
-export const fetchPriceTrackerData = filters => async (dispatch, getState, sdk) => {
+export const fetchPriceTrackerData = filters => async (dispatch, getState) => {
   dispatch(fetchPriceTrackerRequest());
 
   try {
@@ -80,13 +82,14 @@ export const fetchPriceTrackerData = filters => async (dispatch, getState, sdk) 
 
 // Selector functions
 export const selectPriceTrackerData = state => state.PriceTrackerPage.data;
+export const selectPriceTrackerTrends = state => state.PriceTrackerPage.trends;
 export const selectPriceTrackerMeta = state => state.PriceTrackerPage.meta;
 export const selectPriceTrackerIsLoading = state => state.PriceTrackerPage.isLoading;
 export const selectPriceTrackerError = state => state.PriceTrackerPage.error;
 export const selectPriceTrackerFilters = state => state.PriceTrackerPage.filters;
 
 // Load data for server-side rendering
-export const loadData = (params, search) => async (dispatch, getState, sdk) => {
+export const loadData = (params, search) => async (dispatch, getState) => {
   // Initial load with default filters
   const filters = {
     keyword: '',
